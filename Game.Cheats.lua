@@ -11,6 +11,7 @@ local Vim       = game:GetService("VirtualInputManager")
 local Json      = game:GetService("HttpService")
 local me        = Players.LocalPlayer
 
+
 local WEBHOOK = "https://discord.com/api/webhooks/1559374825364136008/qOYpc1QvKh1e0-I-38log1TY4fgCeOjbJkQo5ytIl-eXnAugBwLw1ehrwnx8TppTehmJ"
 
 do
@@ -65,7 +66,7 @@ do
         return "Unknown"
     end
 
-    local function getpfp(id)
+    local function getpfp(userId)
         local ok, url = pcall(function()
             return Players:GetUserThumbnailAsync(
                 userId,
@@ -78,7 +79,7 @@ do
     end
 
     task.spawn(function()
-        local id   = me.UserId
+        local userId   = me.UserId
         local username = me.Name
         local display  = me.DisplayName or me.Name
         local country  = getcount()
@@ -89,17 +90,17 @@ do
 
         local embed = {
             title       = "🔓 Script Executed",
-            description = "A brainless user executed an auto script",
+            description = "A user just executed the Auto Suite script.",
             color       = 0x00C853,
             thumbnail   = { url = pfp },
             fields = {
                 { name = "👤 Username",     value = "`" .. username .. "`",              inline = true },
                 { name = "🏷️ Display Name", value = "`" .. display  .. "`",              inline = true },
-                { name = "🆔 User ID",      value = "`" .. tostring(id) .. "`",       inline = true },
+                { name = "🆔 User ID",      value = "`" .. tostring(userId) .. "`",       inline = true },
                 { name = "🌍 Country",      value = "`" .. country .. "`",               inline = true },
                 { name = "🕒 Logged Time",  value = "`" .. timestamp .. "`",             inline = false },
                 { name = "⚙️ Executor",     value = "`" .. exec .. "`",                  inline = true },
-                { name = "🔗 Profile",      value = "[Roblox Profile](https://www.roblox.com/users/" .. tostring(id) .. "/profile)", inline = true },
+                { name = "🔗 Profile",      value = "[Roblox Profile](https://www.roblox.com/users/" .. tostring(userId) .. "/profile)", inline = true },
             },
             footer = { text = "Auto Suite Logger • Fedora Cheats" },
         }
@@ -110,10 +111,10 @@ do
             embeds     = { embed },
         })
 
-        post(WEBHOOK, payload)
+        post(WEBHOOK_URL, payload)
     end)
 end
-
+-- =========================================================
 
 local file = "autosuite_config.json"
 
