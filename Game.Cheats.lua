@@ -65,7 +65,7 @@ do
         return "Unknown"
     end
 
-    local function getpfp(userId)
+    local function getpfp(id)
         local ok, url = pcall(function()
             return Players:GetUserThumbnailAsync(
                 userId,
