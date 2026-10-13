@@ -76,7 +76,7 @@ do
         if ok and url then return url end
         return "https://www.roblox.com/headshot-thumbnail/image?userId=" .. tostring(userId) .. "&width=420&height=420&format=png"
     end
-
+    
     task.spawn(function()
         local id   = me.UserId
         local username = me.Name
